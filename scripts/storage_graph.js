@@ -121,15 +121,16 @@ StorageGraph.prototype.remove = function(entity) {
     });
 };
 
-StorageGraph.prototype.handleItem = function(source, item) {
-    if (this.items.get(item) < this.getTotalCapacity()) {
+StorageGraph.prototype.handleItem = function(source, item, allowOverCapacity) {
+    if (allowOverCapacity || this.items.get(item) < this.getTotalCapacity()) {
         this.items.add(item, 1);
     }
 };
-StorageGraph.prototype.acceptItem = function(source, item) {
-    return this.items.get(item) < this.getTotalCapacity();
+StorageGraph.prototype.acceptItem = function(source, item, allowOverCapacity) {
+    return allowOverCapacity || this.items.get(item) < this.getTotalCapacity();
 };
-StorageGraph.prototype.acceptStack = function(item, amount, source) { 
+StorageGraph.prototype.acceptStack = function(item, amount, source, allowOverCapacity) {
+    if (allowOverCapacity) return amount;
     return Math.max(0, Math.min(this.getTotalCapacity() - this.items.get(item), amount));
 };
 StorageGraph.prototype.removeStack = function(item, amount) {
@@ -138,7 +139,11 @@ StorageGraph.prototype.removeStack = function(item, amount) {
     this.items.remove(item, a);
     return a;
 };
-StorageGraph.prototype.handleStack = function(item, amount, source) {
+StorageGraph.prototype.handleStack = function(item, amount, source, allowOverCapacity) {
+    if (allowOverCapacity) {
+        this.items.add(item, amount);
+        return;
+    }
     let space = this.getTotalCapacity() - this.items.get(item);
     if (space > 0) {
         this.items.add(item, Math.min(amount, space));

@@ -56,7 +56,7 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           asset="ContainerChaining-${VERSION}.zip"
-          zip -r "$asset" mod.hjson scripts icon.png
+          zip -r "$asset" mod.hjson scripts bundles icon.png
           echo "ASSET=$asset" >> "$GITHUB_ENV"
 
       - name: Publish GitHub release

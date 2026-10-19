@@ -1,8 +1,14 @@
 "use strict";
 let StorageGraph = require("storage_graph");
 
+const stopCoresAtCapacitySetting = "snek-mod-stop-cores-at-capacity";
+const stopCoresAtCapacity = Core.settings.getBool(stopCoresAtCapacitySetting, false);
+
 let chainMethods = {
     _storageGraph: null,
+    allowsCoreOverflow() {
+        return this instanceof CoreBlock.CoreBuild && !stopCoresAtCapacity;
+    },
     getGraph() {
         return this._storageGraph;
     },
@@ -16,21 +22,21 @@ let chainMethods = {
             return;
         }
         
-        this._storageGraph.handleItem(source, item);
+        this._storageGraph.handleItem(source, item, this.allowsCoreOverflow());
     },
     acceptItem(source, item){
         if(this._storageGraph == null) {
             return this.super$acceptItem(source, item);
         }
 
-        return this._storageGraph.acceptItem(source, item);
+        return this._storageGraph.acceptItem(source, item, this.allowsCoreOverflow());
     },
     acceptStack(item, amount, source){
         if(this._storageGraph == null) {
             return this.super$acceptStack(item, amount, source);
         }
 
-        return this._storageGraph.acceptStack(item, amount, source);
+        return this._storageGraph.acceptStack(item, amount, source, this.allowsCoreOverflow());
     },
     removeStack(item, amount){
         if(this._storageGraph == null) {
@@ -45,7 +51,7 @@ let chainMethods = {
             return this.super$handleStack(item, amount, source);
         }
 
-        return this._storageGraph.handleStack(item, amount, source);
+        return this._storageGraph.handleStack(item, amount, source, this.allowsCoreOverflow());
     },
 
     onProximityAdded() {
@@ -170,7 +176,9 @@ let chainCoreBuilding = (block) => () => extend(CoreBlock.CoreBuild, block, Obje
     },
 
     getMaximumAccepted() { 
-        if(this._storageGraph != null) return this._storageGraph.getMaximumAccepted();
+        if(this._storageGraph != null) {
+            return this.allowsCoreOverflow() ? 2147483647 : this._storageGraph.getMaximumAccepted();
+        }
 
         return this.storageCapacity;
     }
